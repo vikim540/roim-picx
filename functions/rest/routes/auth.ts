@@ -244,7 +244,10 @@ authRoutes.post('/checkToken', async (c) => {
     }
 
     // 1. Check Static Token - 使用系统用户登录
-    if (authKey === token) {
+    const isTokenMatch = authKey === token ||
+        token.trim() === authKey.trim() ||
+        token.trim().replace(/\.+$/, '') === authKey.trim().replace(/\.+$/, '')
+    if (isTokenMatch) {
         // 检查是否允许 Token 登录
         if (c.env.ALLOW_TOKEN_LOGIN !== 'true') {
             return c.json(FailCode('Token login is disabled', StatusCode.NotAuth))

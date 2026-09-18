@@ -1,0 +1,26 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "roim-picx"
+account_id = "f5d4e94cb23f69f8ae69baedff94f2ba"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+[vars]
+BASE_URL = "https://picx.131440.xyz"
+PICX_AUTH_TOKEN = "123123"
+ALLOW_TOKEN_LOGIN = "true"
+ADMIN_USERS = "admin"
+STORAGE_TYPE = "R2"
+
+[[kv_namespaces]]
+binding = "XK"
+id = "f7895812b8894c4fa51a173cac8f46ba"
+
+[[r2_buckets]]
+binding = "PICX"
+bucket_name = "r2explorer"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "roim-picx-db"
+database_id = "356e6c2a-cf7a-4b57-94a2-94ab96ff1e44"
+migrations_dir = "migrations"

@@ -190,7 +190,10 @@ export const auth = async (c: Context<AppEnv>, next: Next) => {
     }
 
     // 1. Check if it's the system Admin Token
-    if (token === authKey) {
+    const isTokenMatch = token === authKey ||
+        token.trim() === authKey.trim() ||
+        token.trim().replace(/\.+$/, '') === authKey.trim().replace(/\.+$/, '')
+    if (isTokenMatch) {
         // ... (existing admin token logic)
         if (c.env.ALLOW_TOKEN_LOGIN !== 'true') {
             return c.json(FailCode('Token login is disabled', StatusCode.NotAuth))
