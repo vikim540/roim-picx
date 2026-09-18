@@ -6,13 +6,17 @@ import { ConfigService, type UploadConfigItem } from '../services/ConfigService'
 
 const settingsRoutes = new Hono<AppEnv>()
 
-// Ensure settings endpoints are never cached by browser, proxy, or CDN
+// Ensure settings endpoints are never cached by browser, proxy, or Cloudflare CDN
 settingsRoutes.use('*', async (c, next) => {
     await next()
-    c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
-    c.header('Pragma', 'no-cache')
-    c.header('Expires', '0')
-    c.header('Surrogate-Control', 'no-store')
+    if (c.res) {
+        c.res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
+        c.res.headers.set('Pragma', 'no-cache')
+        c.res.headers.set('Expires', '0')
+        c.res.headers.set('Surrogate-Control', 'no-store')
+        c.res.headers.set('CDN-Cache-Control', 'no-store')
+        c.res.headers.set('Cloudflare-CDN-Cache-Control', 'no-store')
+    }
 })
 
 /**

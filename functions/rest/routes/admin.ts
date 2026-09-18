@@ -6,6 +6,19 @@ import { auth, type AppEnv, isAdminUser, adminAuth } from '../middleware/auth'
 
 const adminRoutes = new Hono<AppEnv>()
 
+// Ensure admin endpoints are never cached by browser, proxy, or Cloudflare CDN
+adminRoutes.use('*', async (c, next) => {
+    await next()
+    if (c.res) {
+        c.res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
+        c.res.headers.set('Pragma', 'no-cache')
+        c.res.headers.set('Expires', '0')
+        c.res.headers.set('Surrogate-Control', 'no-store')
+        c.res.headers.set('CDN-Cache-Control', 'no-store')
+        c.res.headers.set('Cloudflare-CDN-Cache-Control', 'no-store')
+    }
+})
+
 // ============================================
 // 用户管理接口
 // ============================================
