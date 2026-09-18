@@ -7,3 +7,6 @@ dist
 .env
 .env.development
 backup
+wrangler.toml
+wrangler.*.jsonc
+wrangler.*.toml
