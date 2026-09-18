@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElCard, ElTable, ElTableColumn } from 'element-plus'
 import {
-    faPlus, faSave, faTrash, faQuestionCircle
+    faPlus, faSave, faTrash, faQuestionCircle, faRedoAlt
 } from '@fortawesome/free-solid-svg-icons'
 import BaseButton from '../common/BaseButton.vue'
 import BaseInput from '../common/BaseInput.vue'
@@ -35,6 +35,7 @@ const saveSettings = async () => {
     try {
         await requestUpdateUploadConfig(uploadConfig.value)
         ElMessage.success(t('common.saveSuccess'))
+        await loadSettings()
     } catch (e) {
         console.error('Failed to save settings:', e)
     } finally {
@@ -82,10 +83,8 @@ const saveTokenExpire = async () => {
 defineExpose({
     loadSettings,
     init: () => {
-        if (uploadConfig.value.length === 0) {
-            loadSettings()
-            loadTokenExpire()
-        }
+        loadSettings()
+        loadTokenExpire()
     }
 })
 </script>
@@ -96,6 +95,10 @@ defineExpose({
             <div class="flex items-center justify-between">
                 <span>{{ $t('admin.uploadConfig') }}</span>
                 <div class="flex gap-2">
+                    <BaseButton @click="loadSettings" size="sm" :loading="configLoading" title="刷新最新设置">
+                        <font-awesome-icon :icon="faRedoAlt" class="mr-1" />
+                        {{ $t('common.refresh') || '刷新' }}
+                    </BaseButton>
                     <BaseButton @click="addConfigItem" size="sm">
                         <font-awesome-icon :icon="faPlus" class="mr-1" />
                         {{ $t('common.add') }}

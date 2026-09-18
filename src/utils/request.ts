@@ -24,6 +24,23 @@ request.interceptors.request.use(
 			// @ts-ignore
 			config.headers['Authorization'] = (token.includes('.') && !token.startsWith('Bearer ')) ? `Bearer ${token}` : token
 		}
+
+		// Anti-cache headers for all API requests
+		// @ts-ignore
+		config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+		// @ts-ignore
+		config.headers['Pragma'] = 'no-cache'
+		// @ts-ignore
+		config.headers['Expires'] = '0'
+
+		// Add timestamp to GET requests to completely bypass browser and CDN caches
+		if (config.method?.toLowerCase() === 'get') {
+			config.params = {
+				...config.params,
+				_t: Date.now()
+			}
+		}
+
 		return config
 	}
 )

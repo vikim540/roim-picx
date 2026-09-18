@@ -5,9 +5,12 @@ export interface UploadConfigItem {
     ext: string;
 }
 
-// In-memory cache for upload config
+// In-memory cache for upload config with short TTL (5s) to avoid multi-isolate stale data
 let uploadConfigCache: UploadConfigItem[] | null = null;
+let uploadConfigCacheTime = 0;
 let tokenExpireCache: number | null = null;
+let tokenExpireCacheTime = 0;
+const CACHE_TTL = 5000; // 5 seconds
 
 export class ConfigService {
     private db: D1Database;
@@ -16,13 +19,14 @@ export class ConfigService {
         this.db = db;
     }
 
-    async getUploadConfig(): Promise<UploadConfigItem[]> {
-        // Return cache if available
-        if (uploadConfigCache) {
+    async getUploadConfig(forceFresh = false): Promise<UploadConfigItem[]> {
+        const now = Date.now();
+        // Return cache only if not forced and within TTL
+        if (!forceFresh && uploadConfigCache && (now - uploadConfigCacheTime < CACHE_TTL)) {
             return uploadConfigCache;
         }
 
-        // Fetch from DB
+        // Fetch fresh from DB
         const result = await this.db.prepare(
             `SELECT value FROM system_settings WHERE key = 'upload_config'`
         ).first<string>('value');
@@ -37,6 +41,7 @@ export class ConfigService {
         } else {
             uploadConfigCache = [];
         }
+        uploadConfigCacheTime = now;
 
         return uploadConfigCache || [];
     }
@@ -51,15 +56,17 @@ export class ConfigService {
         ).bind(jsonStr).run();
 
         if (result.success) {
-            // Update cache
+            // Invalidate and refresh cache immediately
             uploadConfigCache = config;
+            uploadConfigCacheTime = Date.now();
             return true;
         }
         return false;
     }
 
-    async getTokenExpireDays(): Promise<number> {
-        if (tokenExpireCache !== null) {
+    async getTokenExpireDays(forceFresh = false): Promise<number> {
+        const now = Date.now();
+        if (!forceFresh && tokenExpireCache !== null && (now - tokenExpireCacheTime < CACHE_TTL)) {
             return tokenExpireCache;
         }
 
@@ -71,12 +78,14 @@ export class ConfigService {
             const days = parseInt(result, 10);
             if (!isNaN(days) && days > 0) {
                 tokenExpireCache = days;
+                tokenExpireCacheTime = now;
                 return days;
             }
         }
 
         // Default to 7 days
         tokenExpireCache = 7;
+        tokenExpireCacheTime = now;
         return 7;
     }
 
@@ -91,6 +100,7 @@ export class ConfigService {
 
         if (result.success) {
             tokenExpireCache = days;
+            tokenExpireCacheTime = Date.now();
             return true;
         }
         return false;

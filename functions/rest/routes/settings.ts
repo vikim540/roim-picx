@@ -6,13 +6,22 @@ import { ConfigService, type UploadConfigItem } from '../services/ConfigService'
 
 const settingsRoutes = new Hono<AppEnv>()
 
+// Ensure settings endpoints are never cached by browser, proxy, or CDN
+settingsRoutes.use('*', async (c, next) => {
+    await next()
+    c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
+    c.header('Pragma', 'no-cache')
+    c.header('Expires', '0')
+    c.header('Surrogate-Control', 'no-store')
+})
+
 /**
  * 获取上传配置
  */
 settingsRoutes.get('/upload', auth, adminAuth, async (c) => {
     try {
         const service = new ConfigService(c.env.DB)
-        const config = await service.getUploadConfig()
+        const config = await service.getUploadConfig(true)
         return c.json(Ok(config))
     } catch (e) {
         console.error('Failed to get upload config:', e)
@@ -52,7 +61,7 @@ settingsRoutes.post('/upload', auth, adminAuth, async (c) => {
 settingsRoutes.get('/token-expire', auth, adminAuth, async (c) => {
     try {
         const service = new ConfigService(c.env.DB)
-        const days = await service.getTokenExpireDays()
+        const days = await service.getTokenExpireDays(true)
         return c.json(Ok({ days }))
     } catch (e) {
         return c.json(Fail(`获取 Token 过期配置失败: ${(e as Error).message}`))
