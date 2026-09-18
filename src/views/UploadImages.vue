@@ -349,23 +349,31 @@ const appendConvertedImages = async (files: FileList | null | undefined) => {
             let nsfw = false
             let nsfwScore = 0
             if (nsfwModel.value) {
-                const img = new Image()
-                img.src = URL.createObjectURL(watermarkResult.file)
-                await new Promise((resolve) => { img.onload = resolve })
-                const predictions = await nsfwModel.value.classify(img)
-                URL.revokeObjectURL(img.src)
-
-                // Check if Porn or Hentai probability is high
-                const highestProb = Math.max(...predictions.filter(p => p.className === 'Porn' || p.className === 'Hentai').map(p => p.probability))
-                // console.log('NSFW Prediction:', predictions)
-                if (highestProb > 0.6) {
-                    nsfw = true
-                    nsfwScore = highestProb
-                    elNotify({
-                        message: t('upload.nsfwDetected', { name: file.name }),
-                        type: 'warning',
-                        duration: 5000
+                try {
+                    const img = new Image()
+                    const objectUrl = URL.createObjectURL(watermarkResult.file)
+                    img.src = objectUrl
+                    await new Promise((resolve) => {
+                        img.onload = () => resolve(true)
+                        img.onerror = () => resolve(false)
+                        setTimeout(() => resolve(false), 3000)
                     })
+                    const predictions = await nsfwModel.value.classify(img)
+                    URL.revokeObjectURL(objectUrl)
+
+                    // Check if Porn or Hentai probability is high
+                    const highestProb = Math.max(...predictions.filter(p => p.className === 'Porn' || p.className === 'Hentai').map(p => p.probability))
+                    if (highestProb > 0.6) {
+                        nsfw = true
+                        nsfwScore = highestProb
+                        elNotify({
+                            message: t('upload.nsfwDetected', { name: file.name }),
+                            type: 'warning',
+                            duration: 5000
+                        })
+                    }
+                } catch (nsfwErr) {
+                    console.warn('NSFW classification skipped:', nsfwErr)
                 }
             }
 

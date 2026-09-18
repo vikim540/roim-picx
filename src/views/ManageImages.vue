@@ -32,6 +32,13 @@
                     </button>
                 </div>
 
+                <BaseButton type="indigo" @click="router.push('/up')">
+                    <div class="flex items-center gap-2">
+                        <font-awesome-icon :icon="faCloudUploadAlt" />
+                        <span class="hidden sm:inline">{{ $t('nav.upload') }}</span>
+                        <span class="sm:hidden">{{ $t('nav.upload') }}</span>
+                    </div>
+                </BaseButton>
                 <BaseButton @click="addFolder">
                     <div class="flex items-center gap-2">
                         <font-awesome-icon :icon="faFolderPlus" class="text-amber-500" />
@@ -260,6 +267,7 @@ import formatBytes from '../utils/format-bytes'
 import type { ImgItem, ImgReq, Folder } from '../utils/types'
 import { ElImageViewer } from 'element-plus'
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
     ElMessage, ElDialog, ElButton, ElInput, ElDropdown, ElDropdownMenu, ElDropdownItem,
@@ -283,6 +291,7 @@ import {
 import { faTrashAlt as faTrashAltRegular, faSquare as faSquareRegular } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 const { t } = useI18n()
+const router = useRouter()
 
 const loading = ref(false)
 const loadingMore = ref(false)
