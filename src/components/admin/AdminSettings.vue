@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElCard, ElTable, ElTableColumn } from 'element-plus'
 import {
@@ -59,7 +59,9 @@ const loadTokenExpire = async () => {
     tokenLoading.value = true
     try {
         const res = await requestGetTokenExpire()
-        tokenExpireDays.value = res.days
+        if (res && typeof res.days === 'number') {
+            tokenExpireDays.value = res.days
+        }
     } catch (e) {
         console.error('Failed to load token expire:', e)
     } finally {
@@ -70,8 +72,14 @@ const loadTokenExpire = async () => {
 const saveTokenExpire = async () => {
     tokenLoading.value = true
     try {
-        await requestUpdateTokenExpire(Number(tokenExpireDays.value))
+        const num = Number(tokenExpireDays.value)
+        if (isNaN(num) || num <= 0) {
+            ElMessage.warning('请输入大于 0 的有效天数')
+            return
+        }
+        await requestUpdateTokenExpire(num)
         ElMessage.success(t('common.saveSuccess'))
+        await loadTokenExpire()
     } catch (e) {
         console.error('Failed to save token expire:', e)
         ElMessage.error(t('common.saveFailed') || 'Save failed')
@@ -80,8 +88,14 @@ const saveTokenExpire = async () => {
     }
 }
 
+onMounted(() => {
+    loadSettings()
+    loadTokenExpire()
+})
+
 defineExpose({
     loadSettings,
+    loadTokenExpire,
     init: () => {
         loadSettings()
         loadTokenExpire()
@@ -142,10 +156,16 @@ defineExpose({
         <template #header>
             <div class="flex items-center justify-between">
                 <span>{{ $t('admin.securitySettings') }}</span>
-                <BaseButton type="indigo" @click="saveTokenExpire" size="sm" :loading="tokenLoading">
-                    <font-awesome-icon :icon="faSave" class="mr-1" />
-                    {{ $t('common.save') }}
-                </BaseButton>
+                <div class="flex gap-2">
+                    <BaseButton @click="loadTokenExpire" size="sm" :loading="tokenLoading" title="刷新最新设置">
+                        <font-awesome-icon :icon="faRedoAlt" class="mr-1" />
+                        {{ $t('common.refresh') || '刷新' }}
+                    </BaseButton>
+                    <BaseButton type="indigo" @click="saveTokenExpire" size="sm" :loading="tokenLoading">
+                        <font-awesome-icon :icon="faSave" class="mr-1" />
+                        {{ $t('common.save') }}
+                    </BaseButton>
+                </div>
             </div>
         </template>
         <div v-loading="tokenLoading" class="flex items-center gap-4">

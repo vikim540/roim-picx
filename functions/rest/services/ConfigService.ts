@@ -31,9 +31,16 @@ export class ConfigService {
             `SELECT value FROM system_settings WHERE key = 'upload_config'`
         ).first<string>('value');
 
-        if (result) {
+        let valStr: string | null = null;
+        if (typeof result === 'string') {
+            valStr = result;
+        } else if (result && typeof result === 'object' && 'value' in result) {
+            valStr = String((result as any).value);
+        }
+
+        if (valStr) {
             try {
-                uploadConfigCache = JSON.parse(result);
+                uploadConfigCache = JSON.parse(valStr);
             } catch (e) {
                 console.error('Failed to parse upload_config:', e);
                 uploadConfigCache = [];
@@ -48,10 +55,9 @@ export class ConfigService {
 
     async updateUploadConfig(config: UploadConfigItem[]): Promise<boolean> {
         const jsonStr = JSON.stringify(config);
-
         const result = await this.db.prepare(
             `INSERT INTO system_settings (key, value, description) 
-             VALUES ('upload_config', ?, 'Supported upload file types')
+             VALUES ('upload_config', ?, 'Supported upload file types and extensions')
              ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
         ).bind(jsonStr).run();
 
@@ -74,8 +80,15 @@ export class ConfigService {
             `SELECT value FROM system_settings WHERE key = 'token_expire_days'`
         ).first<string>('value');
 
-        if (result) {
-            const days = parseInt(result, 10);
+        let valStr: string | null = null;
+        if (typeof result === 'string') {
+            valStr = result;
+        } else if (result && typeof result === 'object' && 'value' in result) {
+            valStr = String((result as any).value);
+        }
+
+        if (valStr) {
+            const days = parseInt(valStr, 10);
             if (!isNaN(days) && days > 0) {
                 tokenExpireCache = days;
                 tokenExpireCacheTime = now;
